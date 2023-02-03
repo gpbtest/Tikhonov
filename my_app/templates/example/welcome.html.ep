@@ -1,0 +1,94 @@
+% layout 'default';
+
+<nav class="navbar navbar-default navbar-fixed-top" role="navigation">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="#">Газпромбанк</a>
+        </div>
+        <div class="navbar-collapse collapse">
+        	<form class="navbar-form navbar-left">
+                <div class="form-group">
+                <input type="text" class="form-control" placeholder="Адрес получателя" id="search_q">
+                </div>
+                <button type="submit" class="btn btn-default" id="btn_search">Найти</button>
+            </form>
+        </div>
+    </nav>
+
+	<div class="container">
+        <div class="alert alert-success alert-dismissable hidden">
+            <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+            Количество найденных строк превышает лимит
+        </div>
+
+		<div class="row">
+			<table class="table table-hover">
+				<thead>
+					<tr>
+						<th class="col-xs-2">timestamp</th>
+						<th class="col-xs-10">строка лога</th>
+					</tr>
+				</thead>
+				<tbody id="tbody">
+					
+				</tbody>
+			</table>
+		</div>
+	</div><!-- /container -->
+
+	<script>
+		$(document).ready(function(){
+			$('#btn_search').on('click', function(){
+				if (!$('#search_q').val()) {
+					alert('Введите адрес получателя');
+					return false;
+				}
+
+				let Data = new FormData();
+				Data.append('search_q', $('#search_q').val());
+
+				$.ajax({
+					url:  "<%= url_for('/get_log') %>",
+					type: 'POST',
+					data: Data,
+					contentType: false,
+					processData: false,
+					success: function(data) {
+						if (data.result == 'ok') {
+							$("#tbody tr:has(td)").remove();
+							$('.alert').addClass('hidden');
+
+							if (data.line_limit_exceeded) {
+								$('.alert').removeClass('hidden');
+							}
+
+							$.each(data.data, function (i, item) {
+								$('#tbody').append('<tr><td>' + item[0] + '</td><td>' + item[1] + '</td></tr>');
+							});
+
+							return false;
+						}
+
+						if (data.error && data.errorMessage) {
+							alert('Произошла ошибка: ' + data.errorMessage);
+						}
+						else if (data.error) {
+							alert('Произошла ошибка');
+						}
+
+						return false;
+					},
+					error: function(e, textStatus, errorThrown) {
+						alert ('Ошибка ...');
+					},
+				});
+
+				return false;
+			});
+		});
+	</script>
